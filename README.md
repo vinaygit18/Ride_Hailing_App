@@ -1,10 +1,5 @@
 # GoComet Ride-Hailing Application
 
-
-
-https://github.com/user-attachments/assets/54da2c7b-28f6-4f04-a378-7d634b98dca1
-
-
 https://github.com/user-attachments/assets/36d500af-68d1-4b2e-a6a0-81f5148146ab
 
 
