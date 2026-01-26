@@ -7,10 +7,6 @@ A production-grade ride-hailing backend system built with Go, featuring real-tim
 
 ## Tech Stack
 
-https://github.com/user-attachments/assets/42e0d4af-f68d-46ef-bdb0-fe2cc4e615b1
-
-
-
 | Component | Technology |
 |-----------|------------|
 | Backend | Go 1.24+ with Gin framework |
