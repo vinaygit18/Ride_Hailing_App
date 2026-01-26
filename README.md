@@ -125,7 +125,3 @@ See `.env.example` for all available options including pricing, matching, and ra
 |----------|-------------|
 | [HLD.md](HLD.md) | System architecture and design decisions |
 | [QUICK_TEST_GUIDE.md](QUICK_TEST_GUIDE.md) | Step-by-step testing instructions |
-
-## License
-
-Built for GoComet DAW Assessment.
