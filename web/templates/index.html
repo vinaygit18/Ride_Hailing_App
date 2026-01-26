@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoComet Ride-Hailing</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>GoComet Ride-Hailing Application</h1>
+        <p>Welcome to GoComet - Your reliable ride-hailing service</p>
+
+        <div class="button-group">
+            <a href="/rider" class="btn btn-primary">I'm a Rider</a>
+            <a href="/driver" class="btn btn-secondary">I'm a Driver</a>
+        </div>
+
+        <div class="features">
+            <h2>Features</h2>
+            <ul>
+                <li>Real-time driver matching (&lt;1s p95 latency)</li>
+                <li>Dynamic surge pricing</li>
+                <li>Live location tracking</li>
+                <li>Multiple vehicle types (Economy, Premium, Luxury)</li>
+                <li>Secure payments</li>
+            </ul>
+        </div>
+
+        <div class="stats">
+            <h2>System Status</h2>
+            <div class="stat-cards">
+                <div class="stat-card">
+                    <h3>Drivers Online</h3>
+                    <p id="drivers-online">-</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Active Rides</h3>
+                    <p id="active-rides">-</p>
+                </div>
+                <div class="stat-card">
+                    <h3>WebSocket Status</h3>
+                    <p id="ws-status">Disconnected</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

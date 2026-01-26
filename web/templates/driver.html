@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GoComet - Driver</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <div class="sidebar">
+            <h2>🚕 Driver Control Dashboard</h2>
+            <p style="color: #666; font-size: 13px; margin-top: -10px; margin-bottom: 20px;">Centralized driver management and ride requests</p>
+
+            <div class="stats" style="margin-bottom: 20px;">
+                <h3>Fleet Overview</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div style="padding: 10px; background: #e8f5e9; border-radius: 4px;">
+                        <div style="font-size: 11px; color: #666;">Online Drivers</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #27ae60;"><span id="online-count">0</span></div>
+                    </div>
+                    <div style="padding: 10px; background: #ffebee; border-radius: 4px;">
+                        <div style="font-size: 11px; color: #666;">Offline Drivers</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #e74c3c;"><span id="offline-count">0</span></div>
+                    </div>
+                    <div style="padding: 10px; background: #fff3e0; border-radius: 4px;">
+                        <div style="font-size: 11px; color: #666;">Active Rides</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #ff9800;"><span id="active-rides">0</span></div>
+                    </div>
+                    <div style="padding: 10px; background: #e3f2fd; border-radius: 4px;">
+                        <div style="font-size: 11px; color: #666;">Total Drivers</div>
+                        <div style="font-size: 24px; font-weight: bold; color: #2196f3;"><span id="drivers-count">0</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="drivers-list">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h3 style="margin: 0;">All Drivers</h3>
+                    <button id="refresh-drivers" class="btn btn-secondary" style="padding: 5px 15px; font-size: 12px;">🔄 Refresh</button>
+                </div>
+                <div style="max-height: 500px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px;">
+                    <table id="drivers-table" style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                        <thead style="position: sticky; top: 0; background: #f8f9fa; z-index: 10;">
+                            <tr>
+                                <th style="padding: 10px 8px; text-align: left; border-bottom: 2px solid #ddd;">Driver</th>
+                                <th style="padding: 10px 8px; text-align: center; border-bottom: 2px solid #ddd;">Status</th>
+                                <th style="padding: 10px 8px; text-align: center; border-bottom: 2px solid #ddd;">Current</th>
+                                <th style="padding: 10px 8px; text-align: center; border-bottom: 2px solid #ddd;">Earnings</th>
+                                <th style="padding: 10px 8px; text-align: center; border-bottom: 2px solid #ddd;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="drivers-tbody">
+                            <tr>
+                                <td colspan="5" style="padding: 30px; text-align: center; color: #666;">Loading drivers...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="notifications" class="notifications"></div>
+        </div>
+
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <script src="/static/js/driver.js?v=5"></script>
+</body>
+</html>
