@@ -131,11 +131,12 @@ See `.env.example` for all available options including pricing, matching, and ra
 
 ## Performance Reports
 
-<img width="790" height="364" alt="image" src="https://github.com/user-attachments/assets/eb1b2de8-d386-4da2-b261-7368142cadb6" />
+<img width="788" height="368" alt="image" src="https://github.com/user-attachments/assets/15e3d545-af41-46ef-bee4-57e3defc596c" />
 
-<img width="657" height="261" alt="image" src="https://github.com/user-attachments/assets/bae73094-5f14-451b-8216-d7d271c51c22" />
+<img width="662" height="261" alt="image" src="https://github.com/user-attachments/assets/df5c0672-a762-403d-8734-dd298f2eddfb" />
 
-<img width="656" height="249" alt="image" src="https://github.com/user-attachments/assets/cc6473b5-363c-467f-9c05-f75d41ae2c5e" />
+
+
 
 
 
