@@ -21,9 +21,10 @@ type Service struct {
 
 // Config holds matching configuration
 type Config struct {
-	MaxRadiusKM   float64
-	MaxTimeout    time.Duration
-	MaxCandidates int
+	MaxRadiusKM      float64       // Initial search radius
+	MaxExpandedRadius float64      // Maximum expanded radius when no drivers found
+	MaxTimeout       time.Duration
+	MaxCandidates    int
 }
 
 // DriverCandidate represents a nearby driver
@@ -42,20 +43,70 @@ func NewService(redis *redis.Client, logger *logger.Logger, config Config) *Serv
 }
 
 // FindNearestDriver finds the nearest available driver
+// It starts with the initial radius and expands progressively if no drivers are found
 func (s *Service) FindNearestDriver(ctx context.Context, pickupLat, pickupLng float64, vehicleType driver.VehicleType) (*driver.Driver, error) {
 	startTime := time.Now()
+
+	// Define search radii - start small and expand progressively
+	// Initial: 5km, then expand to 10km, 20km, 50km, up to max expanded radius
+	maxRadius := s.config.MaxExpandedRadius
+	if maxRadius == 0 {
+		maxRadius = 50.0 // Default max 50km if not configured
+	}
+
+	searchRadii := []float64{s.config.MaxRadiusKM}
+
+	// Add expanded radii: 2x, 4x, 10x of initial radius
+	expandedRadii := []float64{
+		s.config.MaxRadiusKM * 2,  // 10km
+		s.config.MaxRadiusKM * 4,  // 20km
+		s.config.MaxRadiusKM * 10, // 50km
+	}
+
+	for _, r := range expandedRadii {
+		if r <= maxRadius {
+			searchRadii = append(searchRadii, r)
+		}
+	}
 
 	// Use Redis GEORADIUS to find nearby drivers
 	key := "drivers:locations"
 
+	// Try each radius progressively
+	for _, radius := range searchRadii {
+		foundDriver, err := s.searchDriversInRadius(ctx, key, pickupLat, pickupLng, radius, vehicleType, startTime)
+		if err == nil && foundDriver != nil {
+			return foundDriver, nil
+		}
+
+		// If we found drivers but none were available, log and try larger radius
+		if radius < maxRadius {
+			s.logger.Info("No available drivers in radius, expanding search",
+				logger.Float64("current_radius_km", radius),
+				logger.Float64("next_radius_km", radius*2),
+			)
+		}
+	}
+
+	s.logger.Warn("No drivers available in maximum search radius",
+		logger.Float64("max_radius_km", maxRadius),
+		logger.Float64("pickup_lat", pickupLat),
+		logger.Float64("pickup_lng", pickupLng),
+	)
+
+	return nil, driver.ErrDriverNotAvailable
+}
+
+// searchDriversInRadius searches for available drivers within a specific radius
+func (s *Service) searchDriversInRadius(ctx context.Context, key string, pickupLat, pickupLng, radius float64, vehicleType driver.VehicleType, startTime time.Time) (*driver.Driver, error) {
 	// Search for drivers within radius
 	results, err := s.redis.GeoRadius(ctx, key, pickupLng, pickupLat, &redis.GeoRadiusQuery{
-		Radius:      s.config.MaxRadiusKM,
-		Unit:        "km",
-		WithCoord:   true,
-		WithDist:    true,
-		Count:       s.config.MaxCandidates,
-		Sort:        "ASC",
+		Radius:    radius,
+		Unit:      "km",
+		WithCoord: true,
+		WithDist:  true,
+		Count:     s.config.MaxCandidates,
+		Sort:      "ASC",
 	}).Result()
 
 	if err != nil {
@@ -66,18 +117,11 @@ func (s *Service) FindNearestDriver(ctx context.Context, pickupLat, pickupLng fl
 		return nil, driver.ErrDriverNotAvailable
 	}
 
-	// Filter by vehicle type and availability (would normally query DB here)
-	// For MVP, we'll use the first available driver
+	// Filter by vehicle type and availability - use atomic claim
 	for _, result := range results {
 		driverID := result.Name
 
-		// Check if driver is available in the available set
-		isAvailable, err := s.redis.SIsMember(ctx, "drivers:available", driverID).Result()
-		if err != nil || !isAvailable {
-			continue
-		}
-
-		// Check if driver is already on a ride
+		// Check if driver is already on a ride first (quick check)
 		currentRideKey := fmt.Sprintf("driver:%s:current_ride", driverID)
 		currentRide, err := s.redis.Get(ctx, currentRideKey).Result()
 		if err == nil && currentRide != "" {
@@ -90,15 +134,33 @@ func (s *Service) FindNearestDriver(ctx context.Context, pickupLat, pickupLng fl
 			continue
 		}
 
-		// Check vehicle type matches (simplified - would query DB in production)
-		// For MVP, we'll create a mock driver
+		// Atomically claim driver by removing from available set
+		// SREM returns 1 if member was removed, 0 if it wasn't there
+		removed, err := s.redis.SRem(ctx, "drivers:available", driverID).Result()
+		if err != nil {
+			s.logger.Warn("Failed to claim driver", logger.String("driver_id", driverID), logger.Err(err))
+			continue
+		}
+		if removed == 0 {
+			// Driver was already claimed by another request
+			s.logger.Info("Driver skipped - already claimed by another request",
+				logger.String("driver_id", driverID),
+				logger.Float64("distance_km", result.Dist),
+			)
+			continue
+		}
+
+		// Successfully claimed the driver - set current ride key to prevent double-assignment
+		// This will be overwritten with actual ride ID in ride_handler
+		s.redis.Set(ctx, currentRideKey, "claiming", 30*time.Second)
+
+		// Create driver object
 		lat := result.Latitude
 		lng := result.Longitude
 
 		// Parse or generate UUID for the driver
 		driverUUID, err := uuid.Parse(driverID)
 		if err != nil {
-			// If not a valid UUID, generate a new one
 			driverUUID = uuid.New()
 		}
 
@@ -113,9 +175,10 @@ func (s *Service) FindNearestDriver(ctx context.Context, pickupLat, pickupLng fl
 		}
 
 		elapsed := time.Since(startTime).Milliseconds()
-		s.logger.Info("Driver matched",
+		s.logger.Info("Driver matched and claimed",
 			logger.String("driver_id", driverID),
 			logger.Float64("distance_km", result.Dist),
+			logger.Float64("search_radius_km", radius),
 			logger.Int64("latency_ms", elapsed),
 		)
 

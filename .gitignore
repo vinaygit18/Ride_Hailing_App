@@ -42,7 +42,6 @@ logs/
 # Database
 *.db
 *.sqlite
-migrations/
 
 # Temporary files
 tmp/

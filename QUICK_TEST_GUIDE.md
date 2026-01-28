@@ -347,13 +347,21 @@ SELECT id, status, driver_id, created_at FROM rides ORDER BY created_at DESC LIM
 
 ## Matching Configuration
 
-The automatic matching uses these defaults:
+The automatic matching uses **progressive radius expansion**:
 
 | Setting | Value | Description |
 |---------|-------|-------------|
-| MaxRadiusKM | 5.0 | Search within 5 km radius |
-| MaxTimeout | 30 | 30 second timeout |
-| MaxCandidates | 10 | Check top 10 nearest drivers |
+| Initial Radius | 5 km | First search radius |
+| Expanded Radii | 10, 20, 50 km | Progressive expansion if no drivers found |
+| Max Radius | 50 km | Maximum search radius |
+| MaxCandidates | 10 | Check top 10 nearest drivers per radius |
+
+**How it works:**
+1. Search within 5km for available drivers
+2. If none found, expand to 10km
+3. If still none, expand to 20km
+4. Finally try 50km (max radius)
+5. Return nearest available driver found
 
 Drivers are selected by:
 1. Proximity (closest first via GEORADIUS sorted ASC)

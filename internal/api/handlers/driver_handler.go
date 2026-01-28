@@ -43,6 +43,14 @@ func (h *Handlers) UpdateDriverLocation(c *gin.Context) {
 		return
 	}
 
+	// Add driver to available set if not currently on a ride
+	currentRideKey := fmt.Sprintf("driver:%s:current_ride", driverID)
+	currentRide, _ := h.Redis.Get(ctx, currentRideKey).Result()
+	if currentRide == "" {
+		h.Redis.SAdd(ctx, "drivers:available", driverID)
+		h.Logger.Info("Driver added to available pool", logger.String("driver_id", driverID))
+	}
+
 	// Also update PostgreSQL (debounced in production)
 	_, err = h.DB.ExecContext(ctx, `
 		UPDATE drivers

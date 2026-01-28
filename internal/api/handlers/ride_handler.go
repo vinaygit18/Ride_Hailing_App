@@ -46,11 +46,13 @@ func (h *Handlers) CreateRide(c *gin.Context) {
 		vehicleType = driver.VehicleEconomy
 	}
 
-	// Create matching service
+	// Create matching service with progressive radius expansion
+	// Starts at 5km, expands to 10km, 20km, up to 50km if no drivers found
 	matchingService := matching.NewService(h.Redis, h.Logger, matching.Config{
-		MaxRadiusKM:   5.0,
-		MaxTimeout:    30,
-		MaxCandidates: 10,
+		MaxRadiusKM:       5.0,  // Initial search radius
+		MaxExpandedRadius: 50.0, // Maximum expanded radius
+		MaxTimeout:        30,
+		MaxCandidates:     50,   // Check up to 50 candidates to handle concurrent requests
 	})
 
 	// Find nearest driver
@@ -89,6 +91,15 @@ func (h *Handlers) CreateRide(c *gin.Context) {
 	h.Logger.Info("Ride saved to PostgreSQL",
 		logger.String("ride_id", rideID),
 		logger.String("driver_id", foundDriver.ID.String()),
+	)
+
+	// Set actual ride ID for driver (matching service already removed from available set)
+	driverIDStr := foundDriver.ID.String()
+	h.Redis.Set(ctx, fmt.Sprintf("driver:%s:current_ride", driverIDStr), rideID, 0)
+
+	h.Logger.Info("Driver marked as busy",
+		logger.String("driver_id", driverIDStr),
+		logger.String("ride_id", rideID),
 	)
 
 	// Send WebSocket notification to dashboard

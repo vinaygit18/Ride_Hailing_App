@@ -128,14 +128,16 @@ GoComet is a production-grade, multi-tenant ride-hailing platform designed to ha
 
 ## 4. Data Flow Diagrams
 
-### 4.1 Ride Request Flow (Synchronous Matching)
+### 4.1 Ride Request Flow (Synchronous Matching with Progressive Radius)
 
 ```
 Rider -> POST /v1/rides -> API Server
            ↓
   [Validate Request]
            ↓
-  [Query Redis GEORADIUS (nearby drivers within 5km)]
+  [Search drivers within 5km radius]
+           ↓
+  [No available drivers?] → [Expand to 10km] → [Expand to 20km] → [Expand to 50km]
            ↓
   [Filter by availability & vehicle type]
            ↓
@@ -150,10 +152,10 @@ Rider -> POST /v1/rides -> API Server
 
 **Key Points:**
 - Matching is **synchronous** - rider waits for driver assignment
+- **Progressive radius expansion**: 5km → 10km → 20km → 50km (max)
 - Response includes matched driver details immediately
-- If no driver available, returns status "requested" for retry
+- If no driver available in max radius, returns status "requested" for retry
 - Sub-second matching via Redis GEORADIUS (O(log N) complexity)
-```
 
 ### 4.2 Location Update Flow
 

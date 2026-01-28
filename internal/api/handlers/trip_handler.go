@@ -130,10 +130,15 @@ func (h *Handlers) EndTrip(c *gin.Context) {
 		logger.Float64("fare", totalFare),
 	)
 
-	// Clear current ride from Redis (temporary state)
+	// Clear current ride from Redis and add driver back to available set
 	currentRideKey := fmt.Sprintf("driver:%s:current_ride", req.DriverID)
 	h.Redis.Del(ctx, currentRideKey)
-	h.Logger.Info("Cleared current ride from Redis", logger.String("driver_id", req.DriverID))
+	h.Redis.SAdd(ctx, "drivers:available", req.DriverID)
+
+	h.Logger.Info("Driver returned to available pool",
+		logger.String("driver_id", req.DriverID),
+		logger.String("ride_id", rideID),
+	)
 
 	// Get driver name from PostgreSQL
 	var driverName string
